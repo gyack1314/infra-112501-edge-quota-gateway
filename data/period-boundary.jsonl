@@ -1,0 +1,10 @@
+{"timestamp": 0, "type": "limit", "data": {"account": "plant", "period": "day1", "cap": 60, "starts": 0, "ends": 10}}
+{"timestamp": 1, "type": "grant", "data": {"account": "plant", "site": "bay-a", "grant": "grant-b", "period": "day1", "units": 50, "starts": 1, "ends": 10}}
+{"timestamp": 9, "type": "admit", "data": {"account": "plant", "site": "bay-a", "request": "last", "grant": "grant-b", "seq": 1, "maximum": 50, "use": "vision"}}
+{"timestamp": 10, "type": "limit", "data": {"account": "plant", "period": "day2", "cap": 60, "starts": 10, "ends": 20}}
+{"timestamp": 10, "type": "admit", "data": {"account": "plant", "site": "bay-a", "request": "late", "grant": "grant-b", "maximum": 1, "use": "vision"}}
+{"timestamp": 11, "type": "close", "data": {"account": "plant", "site": "bay-a", "grant": "grant-b", "last_seq": 1}}
+{"timestamp": 12, "type": "sync_finish", "data": {"account": "plant", "site": "bay-a", "request": "last", "result": "complete", "used": 40}}
+{"timestamp": 13, "type": "sync_admit", "data": {"account": "plant", "site": "bay-a", "grant": "grant-b", "request": "last", "seq": 1, "accepted_at": 9, "maximum": 50, "use": "vision"}}
+{"timestamp": 14, "type": "inspect", "data": {"account": "plant", "period": "day1"}}
+{"timestamp": 14, "type": "inspect", "data": {"account": "plant", "period": "day2"}}

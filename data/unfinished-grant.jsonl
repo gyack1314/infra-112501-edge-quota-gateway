@@ -1,0 +1,15 @@
+{"timestamp": 0, "type": "limit", "data": {"account": "plant", "period": "march", "cap": 120, "starts": 0, "ends": 50}}
+{"timestamp": 1, "type": "grant", "data": {"account": "plant", "site": "bay-a", "grant": "grant-a", "period": "march", "units": 80, "starts": 1, "ends": 20}}
+{"timestamp": 3, "type": "admit", "data": {"account": "plant", "site": "bay-a", "request": "offline-a", "grant": "grant-a", "seq": 1, "maximum": 35, "use": "vision"}}
+{"timestamp": 4, "type": "admit", "data": {"account": "plant", "site": "bay-a", "request": "offline-b", "grant": "grant-a", "seq": 2, "maximum": 30, "use": "guide"}}
+{"timestamp": 5, "type": "admit", "data": {"account": "plant", "site": "cloud", "request": "online-a", "maximum": 25, "use": "assist"}}
+{"timestamp": 6, "type": "timeout", "data": {"account": "plant", "site": "cloud", "request": "online-a"}}
+{"timestamp": 21, "type": "close", "data": {"account": "plant", "site": "bay-a", "grant": "grant-a", "last_seq": 2}}
+{"timestamp": 22, "type": "sync_finish", "data": {"account": "plant", "site": "bay-a", "request": "offline-b", "result": "complete", "used": 12}}
+{"timestamp": 23, "type": "sync_admit", "data": {"account": "plant", "site": "bay-a", "grant": "grant-a", "request": "offline-a", "seq": 1, "accepted_at": 3, "maximum": 35, "use": "vision"}}
+{"timestamp": 24, "type": "inspect", "data": {"account": "plant", "period": "march"}}
+{"timestamp": 25, "type": "limit", "data": {"account": "plant", "period": "march", "cap": 75, "starts": 0, "ends": 50}}
+{"timestamp": 26, "type": "sync_admit", "data": {"account": "plant", "site": "bay-a", "grant": "grant-a", "request": "offline-b", "seq": 2, "accepted_at": 4, "maximum": 30, "use": "guide"}}
+{"timestamp": 27, "type": "sync_finish", "data": {"account": "plant", "site": "bay-a", "request": "offline-a", "result": "never_started"}}
+{"timestamp": 28, "type": "finish", "data": {"account": "plant", "site": "cloud", "request": "online-a", "result": "complete", "used": 22}}
+{"timestamp": 29, "type": "inspect", "data": {"account": "plant", "period": "march"}}
