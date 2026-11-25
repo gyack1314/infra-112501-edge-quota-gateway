@@ -32,3 +32,105 @@ python3 -m unittest -v
 ```
 
 资料工具输出读取的文件、事件数量及首尾秒点。业务状态由使用该事件契约的服务维护。
+
+## 已实现的网关能力
+
+仓库现在包含标准库实现的 `gateway` 包和 `test_gateway.py`：
+
+- `CentralGateway`：订阅 cap/期间、共享额度、在线预留、超时状态、grant 授出、乱序回执/补单、收口缺口、降配差额和跨站点回收。
+- `EdgeSite`：站点本地持久化 grant、连续 `seq`、受理即预留、回执释放差额、重试幂等、进程重启恢复和重连 outbox。
+- `NetworkSimulation`：模拟断网、边缘重启、提供方仿真回执、重连后重复/乱序补报。
+- JSONL replay：直接回放本目录两个演练事件文件。
+- 可选 HTTP JSON/RPC 适配：可用同一套 Python 代码分别启动中心或边缘进程。
+
+### 一键演练
+
+```sh
+python3 -m gateway demo
+python3 -m gateway replay data/unfinished-grant.jsonl
+python3 -m gateway replay data/period-boundary.jsonl
+python3 -m unittest -v
+```
+
+`demo` 默认在系统临时目录写中心与边缘 JSON 状态，并在结尾打印路径；也可用 `--state-dir .demo-state` 指定可见目录，`--json` 输出完整结构化结果。
+
+回放结果中：
+
+- `admit` 无 `grant`：进入中心在线额度。
+- `admit` 有 `grant`：进入对应边缘站点本地账本；超过 `[starts, ends)` 的新受理会被拒绝。
+- `sync_finish` 可以先于 `sync_admit`：中心先持久化回执，等受理证明到达后匹配结算。
+- `close.last_seq` 与已有 `seq` 对照后给出 `missing_seq`；缺口或未终结回执未消除前，grant 本金继续占用。
+- 所有 `seq` 都有有效受理证明且每笔都有 `complete`/`never_started` 最终回执后，grant 才结清并把 `units - actual_used` 退回共享额度。
+
+### 直接调用 Python API
+
+```python
+from gateway import CentralGateway, EdgeSite
+
+center = CentralGateway("state/center.json")
+bay = EdgeSite("bay-a", "state/edges/bay-a.json")
+
+center.publish_limit(
+    account="plant", period="march", cap=120, starts=0, ends=50, at=0
+)
+grant = {
+    "account": "plant", "site": "bay-a", "grant": "grant-a",
+    "period": "march", "units": 80, "starts": 1, "ends": 20,
+}
+center.issue_grant(grant, at=1)
+bay.receive_grant(grant, at=1)
+
+# 断网后只花本地 grant；重启 EdgeSite(...) 会从 JSON 恢复同一余额。
+bay.admit_offline(
+    account="plant", request="offline-a", grant="grant-a",
+    seq=1, maximum=35, at=3,
+)
+bay.record_receipt(
+    account="plant", request="offline-a",
+    result="never_started", at=27,
+)
+
+# 重连后可先交回执，也可重复提交；中心按 account/site/request 幂等。
+center.sync_finish(
+    account="plant", site="bay-a", request="offline-a",
+    result="never_started", at=27,
+)
+center.sync_admit(
+    account="plant", site="bay-a", grant="grant-a", request="offline-a",
+    seq=1, accepted_at=3, maximum=35, at=27,
+)
+print(center.account_report(account="plant", period="march"))
+```
+
+同一 `(account, site, request)` 重放完全相同的 `maximum/use/grant/seq` 时返回原记录；若上限或用途变化，抛出 `IdempotencyConflict`。客户端 `timeout` 只增加未知状态记录，不会释放预留；只有 `never_started` 或带最终 `used` 的 `complete` 才终结请求。
+
+### 对账口径
+
+`account_report()` 的核心字段位于 `balances`：
+
+- `actual_used`：已有最终回执且归属到该期间的实际 Token。
+- `online_pending_reserved`：在线未决请求的 `maximum` 预留。
+- `open_grant_principal`：尚未结清的站点份额本金；断网补单缺口期间不提前拆解释放。
+- `settled_grant_actual`：已结清 grant 转入实际用量口径的部分。
+- `occupied_against_cap = online_actual + online_pending + open_grant_principal + settled_grant_actual`。
+- `headroom_signed = cap - occupied_against_cap`；负数即降配后超出新上限的差额。
+- `reclaimed_units`：已从 grant 退回共享额度的差额累计。
+
+客服视图 `report["customer_service"]` 同时列出降配差额、结果未知/超时请求、尚未匹配受理证明的最终回执，以及仍被占住且带 blocker 的站点 grant。边缘的 `grant_balance()` 另外给出 `spendable_balance`、`unspent_balance` 和 `pending_return_to_center`；断网可接单余额以边缘持久化账本为准，而不是账户缓存总额或上次上报余额。
+
+### 可选 HTTP 进程
+
+```sh
+python3 -m gateway serve --role central --state .runtime/center.json --port 8765
+python3 -m gateway serve --role edge --site bay-a --state .runtime/bay-a.json --port 8766
+```
+
+调用方式：
+
+```sh
+curl -s http://127.0.0.1:8765/v1/rpc \
+  -H 'Content-Type: application/json' \
+  -d '{"method":"account_report","params":{"account":"plant","period":"march"}}'
+```
+
+HTTP 仅默认绑定本机回环地址，供本地演练和测试使用。
