@@ -6,5 +6,6 @@
   "inspect",
   "limit",
   "sync_admit",
-  "sync_finish"
+  "sync_finish",
+  "timeout"
 ]

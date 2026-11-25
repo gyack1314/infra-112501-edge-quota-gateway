@@ -15,6 +15,8 @@
 - **close**　站点提交份额已经关闭的声明，包含 last_seq 即最后一个现场获准受理的序号，0 表示从未受理。该站点在窗口截止后才能形成最终关闭声明。
 - **inspect**　查询中心订阅账户或现场份额。
 
+- **timeout**　调用方等待回执超出期限。引用 account、site、request，不代表提供方有终结结果。
+
 ## 资料文件
 
 - unfinished-grant.jsonl
